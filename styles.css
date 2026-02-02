@@ -457,60 +457,6 @@ button.primary {
   display: none;
 }
 
-.modal {
-  position: fixed;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  z-index: 50;
-}
-
-.modal.hidden {
-  display: none;
-}
-
-.modal-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(17, 21, 31, 0.45);
-  backdrop-filter: blur(4px);
-}
-
-.modal-content {
-  position: relative;
-  width: min(92vw, 520px);
-  background: var(--card);
-  border-radius: 20px;
-  padding: 1.4rem;
-  box-shadow: var(--shadow);
-  border: 1px solid rgba(228, 231, 239, 0.9);
-  z-index: 1;
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  margin-bottom: 0.8rem;
-}
-
-.modal-body {
-  display: grid;
-  gap: 0.4rem;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.6rem;
-  margin-top: 1rem;
-}
-
-.modal-close {
-  padding: 0.35rem 0.8rem;
-}
-
 @media (max-width: 900px) {
   .app-header {
     padding: 1.2rem 1.2rem 0.6rem;

@@ -57,44 +57,6 @@ tabs.forEach((btn) => {
 const el = (selector) => document.querySelector(selector);
 const elAll = (selector) => Array.from(document.querySelectorAll(selector));
 
-function openModal(id) {
-  const modal = el(`#${id}`);
-  if (!modal) return;
-  modal.classList.remove("hidden");
-  modal.setAttribute("aria-hidden", "false");
-}
-
-function closeModal(id) {
-  const modal = el(`#${id}`);
-  if (!modal) return;
-  modal.classList.add("hidden");
-  modal.setAttribute("aria-hidden", "true");
-}
-
-function resetBoardForm() {
-  editingBoardId = null;
-  el("#board-name").value = "";
-  el("#board-thickness").value = "";
-  el("#board-cost").value = "";
-  el("#board-waste").value = "";
-  el("#board-sizes").value = "";
-}
-
-function resetEdgebandForm() {
-  editingEdgebandId = null;
-  el("#edgeband-name").value = "";
-  el("#edgeband-width").value = "";
-  el("#edgeband-cost").value = "";
-  el("#edgeband-waste").value = "";
-}
-
-function resetAccessoryForm() {
-  editingAccessoryId = null;
-  el("#acc-name").value = "";
-  el("#acc-unit").value = "";
-  el("#acc-cost").value = "";
-}
-
 function ensureProjectStatus(project) {
   if (!PROJECT_STATUSES.some((status) => status.id === project.status)) {
     project.status = "nuevo";
@@ -1072,7 +1034,6 @@ function renderBoardsList() {
     el("#board-cost").value = board.cost;
     el("#board-waste").value = board.wastePct;
     el("#board-sizes").value = board.sizes.map((s) => `${s.width}x${s.height}`).join(",");
-    openModal("modal-board");
   });
 }
 
@@ -1113,7 +1074,6 @@ function renderEdgebandsList() {
     el("#edgeband-width").value = band.width;
     el("#edgeband-cost").value = band.costPerM;
     el("#edgeband-waste").value = band.wastePct;
-    openModal("modal-edgeband");
   });
 }
 
@@ -1153,7 +1113,6 @@ function renderAccessoriesList() {
     el("#acc-name").value = acc.name;
     el("#acc-unit").value = acc.unit;
     el("#acc-cost").value = acc.cost;
-    openModal("modal-accessory");
   });
 }
 
@@ -1171,37 +1130,6 @@ const projectsBoard = el("#projects-board");
 if (projectsBoard) {
   projectsBoard.addEventListener("click", handleProjectBoardClick);
 }
-
-const boardModalBtn = el("#btn-open-board-modal");
-if (boardModalBtn) {
-  boardModalBtn.addEventListener("click", () => {
-    resetBoardForm();
-    openModal("modal-board");
-  });
-}
-
-const edgebandModalBtn = el("#btn-open-edgeband-modal");
-if (edgebandModalBtn) {
-  edgebandModalBtn.addEventListener("click", () => {
-    resetEdgebandForm();
-    openModal("modal-edgeband");
-  });
-}
-
-const accessoryModalBtn = el("#btn-open-accessory-modal");
-if (accessoryModalBtn) {
-  accessoryModalBtn.addEventListener("click", () => {
-    resetAccessoryForm();
-    openModal("modal-accessory");
-  });
-}
-
-elAll("[data-close]").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const id = btn.dataset.close;
-    if (id) closeModal(id);
-  });
-});
 
 el("#btn-new-project").addEventListener("click", () => {
   currentProject = createEmptyProject();
@@ -1396,7 +1324,6 @@ el("#btn-add-board").addEventListener("click", () => {
   renderCatalogs();
   renderTemplateEditor();
   renderProjectView();
-  closeModal("modal-board");
 });
 
 el("#btn-add-edgeband").addEventListener("click", () => {
@@ -1418,7 +1345,6 @@ el("#btn-add-edgeband").addEventListener("click", () => {
   renderCatalogs();
   renderTemplateEditor();
   renderProjectView();
-  closeModal("modal-edgeband");
 });
 
 el("#btn-add-accessory").addEventListener("click", () => {
@@ -1439,7 +1365,6 @@ el("#btn-add-accessory").addEventListener("click", () => {
   renderCatalogs();
   renderTemplateEditor();
   renderProjectView();
-  closeModal("modal-accessory");
 });
 
 el("#btn-save-settings").addEventListener("click", () => {
