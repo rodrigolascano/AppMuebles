@@ -240,32 +240,23 @@
           <div class="card">
             <h3>Placas</h3>
             <div id="boards-list"></div>
-            <div class="divider"></div>
-            <label>Nombre<input id="board-name" type="text" /></label>
-            <label>Espesor (mm)<input id="board-thickness" type="number" /></label>
-            <label>Costo por placa<input id="board-cost" type="number" step="0.01" /></label>
-            <label>% desperdicio compra<input id="board-waste" type="number" step="0.1" /></label>
-            <label>Tamanos (mm) - ej: 2750x1830,2440x1220<input id="board-sizes" type="text" /></label>
-            <button id="btn-add-board" class="primary">Guardar placa</button>
+            <div class="actions">
+              <button id="btn-open-board-modal" class="primary">Agregar placa</button>
+            </div>
           </div>
           <div class="card">
             <h3>Tapacanto</h3>
             <div id="edgebands-list"></div>
-            <div class="divider"></div>
-            <label>Nombre<input id="edgeband-name" type="text" /></label>
-            <label>Ancho/Espesor (mm)<input id="edgeband-width" type="number" /></label>
-            <label>Costo por metro<input id="edgeband-cost" type="number" step="0.01" /></label>
-            <label>% merma<input id="edgeband-waste" type="number" step="0.1" /></label>
-            <button id="btn-add-edgeband" class="primary">Guardar tapacanto</button>
+            <div class="actions">
+              <button id="btn-open-edgeband-modal" class="primary">Agregar tapacanto</button>
+            </div>
           </div>
           <div class="card">
             <h3>Accesorios</h3>
             <div id="accessories-list"></div>
-            <div class="divider"></div>
-            <label>Nombre<input id="acc-name" type="text" /></label>
-            <label>Unidad<input id="acc-unit" type="text" placeholder="u, par, set" /></label>
-            <label>Costo unitario<input id="acc-cost" type="number" step="0.01" /></label>
-            <button id="btn-add-accessory" class="primary">Guardar accesorio</button>
+            <div class="actions">
+              <button id="btn-open-accessory-modal" class="primary">Agregar accesorio</button>
+            </div>
           </div>
         </div>
       </section>
@@ -309,6 +300,66 @@
     <footer class="app-footer">
       <span>Todo local - sin servicios externos</span>
     </footer>
+
+    <div id="modal-board" class="modal hidden" aria-hidden="true">
+      <div class="modal-backdrop" data-close="modal-board"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Placa</h3>
+          <button class="ghost modal-close" data-close="modal-board">Cerrar</button>
+        </div>
+        <div class="modal-body">
+          <label>Nombre<input id="board-name" type="text" /></label>
+          <label>Espesor (mm)<input id="board-thickness" type="number" /></label>
+          <label>Costo por placa<input id="board-cost" type="number" step="0.01" /></label>
+          <label>% desperdicio compra<input id="board-waste" type="number" step="0.1" /></label>
+          <label>Tamanos (mm) - ej: 2750x1830,2440x1220<input id="board-sizes" type="text" /></label>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-add-board" class="primary">Guardar placa</button>
+          <button class="ghost" data-close="modal-board">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-edgeband" class="modal hidden" aria-hidden="true">
+      <div class="modal-backdrop" data-close="modal-edgeband"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Tapacanto</h3>
+          <button class="ghost modal-close" data-close="modal-edgeband">Cerrar</button>
+        </div>
+        <div class="modal-body">
+          <label>Nombre<input id="edgeband-name" type="text" /></label>
+          <label>Ancho/Espesor (mm)<input id="edgeband-width" type="number" /></label>
+          <label>Costo por metro<input id="edgeband-cost" type="number" step="0.01" /></label>
+          <label>% merma<input id="edgeband-waste" type="number" step="0.1" /></label>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-add-edgeband" class="primary">Guardar tapacanto</button>
+          <button class="ghost" data-close="modal-edgeband">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-accessory" class="modal hidden" aria-hidden="true">
+      <div class="modal-backdrop" data-close="modal-accessory"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Accesorio</h3>
+          <button class="ghost modal-close" data-close="modal-accessory">Cerrar</button>
+        </div>
+        <div class="modal-body">
+          <label>Nombre<input id="acc-name" type="text" /></label>
+          <label>Unidad<input id="acc-unit" type="text" placeholder="u, par, set" /></label>
+          <label>Costo unitario<input id="acc-cost" type="number" step="0.01" /></label>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-add-accessory" class="primary">Guardar accesorio</button>
+          <button class="ghost" data-close="modal-accessory">Cancelar</button>
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="app.js"></script>
   </body>
