@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>App Muebles</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-mark">AM</div>
+        <div>
+          <h1>App Muebles</h1>
+          <p>Cotizador y optimizador de cortes para melamina</p>
+        </div>
+      </div>
+      <nav class="app-nav">
+        <button data-view="projects" class="nav-btn active">Proyectos</button>
+        <button data-view="project" class="nav-btn">Nuevo Proyecto</button>
+        <button data-view="templates" class="nav-btn">Plantillas</button>
+        <button data-view="catalogs" class="nav-btn">Catalogos</button>
+        <button data-view="settings" class="nav-btn">Configuracion</button>
+      </nav>
+    </header>
+
+    <main class="app-main">
+      <section id="view-projects" class="view active">
+        <div class="view-header">
+          <h2>Proyectos</h2>
+          <button id="btn-new-project" class="primary">Nuevo proyecto</button>
+        </div>
+        <p class="muted">Arrastra las tarjetas para pasar de estado.</p>
+        <div id="projects-board" class="kanban"></div>
+      </section>
+
+      <section id="view-project" class="view">
+        <div class="view-header">
+          <h2>Nuevo Proyecto</h2>
+          <div class="header-actions">
+            <button id="btn-save-project" class="primary">Guardar proyecto</button>
+            <button id="btn-reset-project" class="ghost">Limpiar</button>
+          </div>
+        </div>
+        <div class="grid two">
+          <div class="card">
+            <h3>Datos del cliente</h3>
+            <div class="form-grid two">
+              <label>
+                Cliente
+                <input id="proj-client" type="text" />
+              </label>
+              <label>
+                Contacto
+                <input id="proj-contact" type="text" />
+              </label>
+              <label>
+                Fecha
+                <input id="proj-date" type="date" />
+              </label>
+              <label>
+                Nombre proyecto
+                <input id="proj-name" type="text" />
+              </label>
+            </div>
+            <label>
+              Notas
+              <textarea id="proj-notes" rows="3"></textarea>
+            </label>
+          </div>
+          <div class="card">
+            <h3>Agregar items</h3>
+            <div class="tabs">
+              <button class="tab-btn active" data-tab="template">Plantilla</button>
+              <button class="tab-btn" data-tab="manual">Pieza manual</button>
+              <button class="tab-btn" data-tab="accessory">Accesorio manual</button>
+            </div>
+            <div id="tab-template" class="tab-panel active">
+              <label>
+                Plantilla
+                <select id="tpl-select"></select>
+              </label>
+              <div id="tpl-params" class="form-grid three"></div>
+              <label>
+                Cantidad de modulos
+                <input id="tpl-qty" type="number" min="1" value="1" />
+              </label>
+              <button id="btn-add-template" class="primary">Agregar plantilla</button>
+            </div>
+            <div id="tab-manual" class="tab-panel">
+              <div class="form-grid two">
+                <label>
+                  Nombre pieza
+                  <input id="manual-name" type="text" />
+                </label>
+                <label>
+                  Material
+                  <select id="manual-material"></select>
+                </label>
+                <label>
+                  Largo (mm)
+                  <input id="manual-length" type="number" min="1" />
+                </label>
+                <label>
+                  Ancho (mm)
+                  <input id="manual-width" type="number" min="1" />
+                </label>
+                <label>
+                  Cantidad
+                  <input id="manual-qty" type="number" min="1" value="1" />
+                </label>
+                <label>
+                  Tapacanto
+                  <select id="manual-edgeband"></select>
+                </label>
+              </div>
+              <div class="edge-grid">
+                <label><input type="checkbox" id="edge-l1" /> Lado largo 1</label>
+                <label><input type="checkbox" id="edge-l2" /> Lado largo 2</label>
+                <label><input type="checkbox" id="edge-w1" /> Lado corto 1</label>
+                <label><input type="checkbox" id="edge-w2" /> Lado corto 2</label>
+              </div>
+              <label>
+                Observaciones
+                <input id="manual-notes" type="text" />
+              </label>
+              <button id="btn-add-manual" class="primary">Agregar pieza</button>
+            </div>
+            <div id="tab-accessory" class="tab-panel">
+              <label>
+                Accesorio
+                <select id="manual-accessory"></select>
+              </label>
+              <label>
+                Cantidad
+                <input id="manual-accessory-qty" type="number" min="1" value="1" />
+              </label>
+              <label>
+                Notas
+                <input id="manual-accessory-notes" type="text" />
+              </label>
+              <button id="btn-add-manual-accessory" class="primary">Agregar accesorio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Items del proyecto</h3>
+          </div>
+          <div id="project-items"></div>
+          <div id="project-manual-accessories"></div>
+        </div>
+
+        <div class="grid two">
+          <div class="card">
+            <h3>Piezas (cut list)</h3>
+            <div id="cut-list"></div>
+            <button id="btn-export-cutlist" class="ghost">Exportar CutList CSV</button>
+            <button id="btn-export-cutlist-pdf" class="ghost">Exportar CutList PDF</button>
+          </div>
+          <div class="card">
+            <h3>Tapacanto</h3>
+            <div id="edgeband-totals"></div>
+          </div>
+        </div>
+
+        <div class="grid two">
+          <div class="card">
+            <h3>Accesorios</h3>
+            <div id="accessory-totals"></div>
+          </div>
+          <div class="card">
+            <h3>Costos</h3>
+            <div id="cost-summary"></div>
+            <div class="actions">
+              <button id="btn-export-pdf" class="primary">Exportar PDF Presupuesto</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Corte optimizado</h3>
+            <span class="muted">Heuristica First-Fit Decreasing con estanterias.</span>
+          </div>
+          <div id="nesting-view"></div>
+        </div>
+      </section>
+
+      <section id="view-templates" class="view">
+        <div class="view-header">
+          <h2>Plantillas</h2>
+          <button id="btn-new-template" class="primary">Nueva plantilla</button>
+        </div>
+        <div class="grid two">
+          <div class="card">
+            <h3>Plantillas guardadas</h3>
+            <div id="templates-list"></div>
+          </div>
+          <div class="card">
+            <h3>Editor de plantilla</h3>
+            <label>
+              Nombre
+              <input id="tpl-name" type="text" />
+            </label>
+            <div class="form-grid three">
+              <label>ANCHO<input id="param-ancho" type="number" /></label>
+              <label>ALTO<input id="param-alto" type="number" /></label>
+              <label>PROF<input id="param-prof" type="number" /></label>
+              <label>ESPESOR<input id="param-espesor" type="number" /></label>
+              <label>HOLGURA<input id="param-holgura" type="number" /></label>
+            </div>
+
+            <div class="subsection">
+              <h4>Piezas</h4>
+              <div id="tpl-pieces"></div>
+              <button id="btn-add-tpl-piece" class="ghost">Agregar pieza</button>
+            </div>
+
+            <div class="subsection">
+              <h4>Accesorios por modulo</h4>
+              <div id="tpl-accessories"></div>
+              <button id="btn-add-tpl-accessory" class="ghost">Agregar accesorio</button>
+            </div>
+
+            <div class="actions">
+              <button id="btn-save-template" class="primary">Guardar plantilla</button>
+              <button id="btn-delete-template" class="ghost">Eliminar</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-catalogs" class="view">
+        <div class="view-header">
+          <h2>Catalogos</h2>
+        </div>
+        <div class="grid three">
+          <div class="card">
+            <h3>Placas</h3>
+            <div id="boards-list"></div>
+            <div class="divider"></div>
+            <label>Nombre<input id="board-name" type="text" /></label>
+            <label>Espesor (mm)<input id="board-thickness" type="number" /></label>
+            <label>Costo por placa<input id="board-cost" type="number" step="0.01" /></label>
+            <label>% desperdicio compra<input id="board-waste" type="number" step="0.1" /></label>
+            <label>Tamanos (mm) - ej: 2750x1830,2440x1220<input id="board-sizes" type="text" /></label>
+            <button id="btn-add-board" class="primary">Guardar placa</button>
+          </div>
+          <div class="card">
+            <h3>Tapacanto</h3>
+            <div id="edgebands-list"></div>
+            <div class="divider"></div>
+            <label>Nombre<input id="edgeband-name" type="text" /></label>
+            <label>Ancho/Espesor (mm)<input id="edgeband-width" type="number" /></label>
+            <label>Costo por metro<input id="edgeband-cost" type="number" step="0.01" /></label>
+            <label>% merma<input id="edgeband-waste" type="number" step="0.1" /></label>
+            <button id="btn-add-edgeband" class="primary">Guardar tapacanto</button>
+          </div>
+          <div class="card">
+            <h3>Accesorios</h3>
+            <div id="accessories-list"></div>
+            <div class="divider"></div>
+            <label>Nombre<input id="acc-name" type="text" /></label>
+            <label>Unidad<input id="acc-unit" type="text" placeholder="u, par, set" /></label>
+            <label>Costo unitario<input id="acc-cost" type="number" step="0.01" /></label>
+            <button id="btn-add-accessory" class="primary">Guardar accesorio</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-settings" class="view">
+        <div class="view-header">
+          <h2>Configuracion</h2>
+        </div>
+        <div class="grid two">
+          <div class="card">
+            <h3>Parametros generales</h3>
+            <label>Kerf / ancho de corte (mm)<input id="set-kerf" type="number" /></label>
+            <label>Margen de ganancia (%)<input id="set-margin" type="number" step="0.1" /></label>
+            <label>Modo mano de obra
+              <select id="set-labor-mode">
+                <option value="hour">Por hora</option>
+                <option value="m2">Por m2</option>
+              </select>
+            </label>
+            <label>Costo por hora<input id="set-labor-hour" type="number" step="0.01" /></label>
+            <label>Costo por m2<input id="set-labor-m2" type="number" step="0.01" /></label>
+            <label>Tiempo por pieza (min)<input id="set-time-piece" type="number" step="0.1" /></label>
+            <label>Tiempo por modulo (min)<input id="set-time-module" type="number" step="0.1" /></label>
+            <button id="btn-save-settings" class="primary">Guardar configuracion</button>
+          </div>
+          <div class="card">
+            <h3>Backup</h3>
+            <p class="muted">Guardar y cargar todos los datos en JSON.</p>
+            <div class="actions">
+              <button id="btn-export-json" class="ghost">Exportar JSON</button>
+              <label class="file-input">
+                Importar JSON
+                <input id="import-json" type="file" accept="application/json" />
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <span>Todo local - sin servicios externos</span>
+    </footer>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,42 @@
+# App Muebles (MVP)
+
+Web app local para cotizar muebles de melamina, calcular consumos y optimizar cortes.
+
+## Como correr
+
+1. Abrir `appMuebles/index.html` en el navegador.
+2. Todo se guarda en el navegador (LocalStorage).
+
+## Datos de ejemplo incluidos
+
+- 1 placa de melamina con dos tamanos.
+- 1 tapacanto.
+- 5 accesorios.
+- 2 plantillas (bajo mesada y alacena).
+
+## Estructura
+
+- `appMuebles/domain/`: formulas y calculos.
+- `appMuebles/services/`: resumen del proyecto.
+- `appMuebles/storage/`: persistencia LocalStorage.
+- `appMuebles/nesting/`: heuristica de corte 2D.
+- `appMuebles/app.js`: UI.
+
+## Nesting
+
+El algoritmo usa First-Fit Decreasing con estanterias (shelves):
+
+1. Ordena piezas por area descendente.
+2. Intenta ubicarlas en estantes existentes.
+3. Si no entra, crea un nuevo estante o una nueva placa.
+4. Respeta el kerf entre cortes.
+
+Parametros:
+- `settings.kerf` en `appMuebles/storage/repository.js`.
+- En cada placa, el % de desperdicio de compra.
+
+## Exportaciones
+
+- Presupuesto: abre una ventana de impresion (PDF desde el navegador).
+- Cut list: descarga CSV.
+- Backup: export/import JSON.
