@@ -6,6 +6,7 @@ import {
   generateId
 } from "./storage/repository.js";
 import { buildProjectSummary } from "./services/projectService.js";
+import { evalExpr } from "./domain/calc.js";
 
 let data = loadData();
 let currentProject = createEmptyProject();
@@ -269,6 +270,156 @@ function applySettingsPreset(preset) {
   saveData(data);
   fillSettingsForm();
   renderProjectView();
+}
+
+function parseBoardSizes(rawValue) {
+  return String(rawValue || "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const [width, height] = entry.split("x").map((n) => Number(n.trim()));
+      return { width, height, raw: entry };
+    });
+}
+
+function updateBoardSizesHint() {
+  const hint = el("#board-sizes-hint");
+  if (!hint) return;
+  const sizes = parseBoardSizes(el("#board-sizes").value);
+  const valid = sizes.filter((size) => size.width > 0 && size.height > 0);
+  if (!sizes.length) {
+    hint.textContent = "Si no cargas tamanos, se usara 2750x1830 por defecto.";
+    return;
+  }
+  const invalidCount = sizes.length - valid.length;
+  hint.textContent = invalidCount
+    ? `${valid.length} tamano(s) valido(s), ${invalidCount} invalido(s). Formato: ANCHOxALTO en mm.`
+    : `${valid.length} tamano(s) validado(s).`;
+}
+
+function resetBoardForm() {
+  editingBoardId = null;
+  el("#board-name").value = "";
+  el("#board-thickness").value = "";
+  el("#board-cost").value = "";
+  el("#board-waste").value = "";
+  el("#board-sizes").value = "";
+  updateBoardSizesHint();
+}
+
+function resetEdgebandForm() {
+  editingEdgebandId = null;
+  el("#edgeband-name").value = "";
+  el("#edgeband-width").value = "";
+  el("#edgeband-cost").value = "";
+  el("#edgeband-waste").value = "";
+}
+
+function resetAccessoryForm() {
+  editingAccessoryId = null;
+  el("#acc-name").value = "";
+  el("#acc-unit").value = "";
+  el("#acc-cost").value = "";
+}
+
+function getBoardUsage(boardId) {
+  const templateCount = data.templates.reduce(
+    (acc, tpl) => acc + tpl.pieces.filter((piece) => piece.materialId === boardId).length,
+    0
+  );
+  const projectManualCount = data.projects.reduce((acc, project) => {
+    const items = project.items || [];
+    return (
+      acc +
+      items.filter((item) => item.type === "piece" && item.piece?.materialId === boardId).length
+    );
+  }, 0);
+  return templateCount + projectManualCount;
+}
+
+function getEdgebandUsage(edgeId) {
+  const templateCount = data.templates.reduce(
+    (acc, tpl) => acc + tpl.pieces.filter((piece) => piece.edgeBandId === edgeId).length,
+    0
+  );
+  const projectManualCount = data.projects.reduce((acc, project) => {
+    const items = project.items || [];
+    return (
+      acc +
+      items.filter((item) => item.type === "piece" && item.piece?.edgeBandId === edgeId).length
+    );
+  }, 0);
+  return templateCount + projectManualCount;
+}
+
+function getAccessoryUsage(accessoryId) {
+  const templateCount = data.templates.reduce(
+    (acc, tpl) =>
+      acc + tpl.accessoriesRules.filter((rule) => rule.accessoryId === accessoryId).length,
+    0
+  );
+  const projectManualCount = data.projects.reduce((acc, project) => {
+    const items = project.manualAccessories || [];
+    return acc + items.filter((entry) => entry.accessoryId === accessoryId).length;
+  }, 0);
+  return templateCount + projectManualCount;
+}
+
+function refreshCatalogFormState() {
+  const boardState = el("#board-form-state");
+  const boardBtn = el("#btn-add-board");
+  if (boardState && boardBtn) {
+    if (editingBoardId && !data.catalogs.boards.some((entry) => entry.id === editingBoardId)) {
+      editingBoardId = null;
+    }
+    if (editingBoardId) {
+      const board = data.catalogs.boards.find((entry) => entry.id === editingBoardId);
+      boardState.textContent = `Editando placa: ${board?.name || editingBoardId}`;
+      boardBtn.textContent = "Actualizar placa";
+    } else {
+      boardState.textContent = "Nueva placa";
+      boardBtn.textContent = "Guardar placa";
+    }
+  }
+
+  const edgeState = el("#edgeband-form-state");
+  const edgeBtn = el("#btn-add-edgeband");
+  if (edgeState && edgeBtn) {
+    if (
+      editingEdgebandId &&
+      !data.catalogs.edgebands.some((entry) => entry.id === editingEdgebandId)
+    ) {
+      editingEdgebandId = null;
+    }
+    if (editingEdgebandId) {
+      const edge = data.catalogs.edgebands.find((entry) => entry.id === editingEdgebandId);
+      edgeState.textContent = `Editando tapacanto: ${edge?.name || editingEdgebandId}`;
+      edgeBtn.textContent = "Actualizar tapacanto";
+    } else {
+      edgeState.textContent = "Nuevo tapacanto";
+      edgeBtn.textContent = "Guardar tapacanto";
+    }
+  }
+
+  const accessoryState = el("#accessory-form-state");
+  const accessoryBtn = el("#btn-add-accessory");
+  if (accessoryState && accessoryBtn) {
+    if (
+      editingAccessoryId &&
+      !data.catalogs.accessories.some((entry) => entry.id === editingAccessoryId)
+    ) {
+      editingAccessoryId = null;
+    }
+    if (editingAccessoryId) {
+      const acc = data.catalogs.accessories.find((entry) => entry.id === editingAccessoryId);
+      accessoryState.textContent = `Editando accesorio: ${acc?.name || editingAccessoryId}`;
+      accessoryBtn.textContent = "Actualizar accesorio";
+    } else {
+      accessoryState.textContent = "Nuevo accesorio";
+      accessoryBtn.textContent = "Guardar accesorio";
+    }
+  }
 }
 
 function updateProjectFromForm() {
@@ -1098,9 +1249,42 @@ function renderTemplateEditor() {
   el("#param-prof").value = templateDraft.params.PROF || 0;
   el("#param-espesor").value = templateDraft.params.ESPESOR || 0;
   el("#param-holgura").value = templateDraft.params.HOLGURA || 0;
+  el("#param-ancho").oninput = handleTemplateParamInput;
+  el("#param-alto").oninput = handleTemplateParamInput;
+  el("#param-prof").oninput = handleTemplateParamInput;
+  el("#param-espesor").oninput = handleTemplateParamInput;
+  el("#param-holgura").oninput = handleTemplateParamInput;
 
   renderTemplatePieces();
   renderTemplateAccessories();
+}
+
+function handleTemplateParamInput() {
+  templateDraft.params.ANCHO = toNumber(el("#param-ancho").value, 0);
+  templateDraft.params.ALTO = toNumber(el("#param-alto").value, 0);
+  templateDraft.params.PROF = toNumber(el("#param-prof").value, 0);
+  templateDraft.params.ESPESOR = toNumber(el("#param-espesor").value, 0);
+  templateDraft.params.HOLGURA = toNumber(el("#param-holgura").value, 0);
+  renderTemplatePieces();
+}
+
+function evaluateTemplatePiece(piece) {
+  const length = evalExpr(piece.exprL, templateDraft.params);
+  const width = evalExpr(piece.exprW, templateDraft.params);
+  const qty = evalExpr(piece.qtyExpr || "1", templateDraft.params);
+  if (!Number.isFinite(length) || !Number.isFinite(width) || !Number.isFinite(qty)) {
+    return { ok: false, message: "Expresion invalida o sin resultado numerico." };
+  }
+  if (length <= 0 || width <= 0 || qty <= 0) {
+    return {
+      ok: false,
+      message: `Resultado invalido: ${formatNumber(length, 2)} x ${formatNumber(width, 2)} / qty ${formatNumber(qty, 2)}`
+    };
+  }
+  return {
+    ok: true,
+    message: `Preview: ${formatNumber(length, 1)} x ${formatNumber(width, 1)} mm | qty ${formatNumber(qty, 2)}`
+  };
 }
 
 function renderTemplatePieces() {
@@ -1111,6 +1295,7 @@ function renderTemplatePieces() {
     return;
   }
   templateDraft.pieces.forEach((piece, index) => {
+    const preview = evaluateTemplatePiece(piece);
     const row = document.createElement("div");
     row.className = "form-grid three";
     row.innerHTML = `
@@ -1147,6 +1332,7 @@ function renderTemplatePieces() {
         <label><input type="checkbox" data-field="edges.w2" data-index="${index}" ${piece.edges?.w2 ? "checked" : ""} /> C2</label>
         <button data-action="remove" data-index="${index}" class="ghost">Quitar</button>
       </div>
+      <div class="form-preview ${preview.ok ? "" : "error"}">${preview.message}</div>
     `;
     container.appendChild(row);
   });
@@ -1172,6 +1358,13 @@ function handleTemplatePieceChange(event) {
     piece.edges[edgeField] = event.target.checked;
   } else {
     piece[field] = event.target.value;
+  }
+  const row = event.target.closest(".form-grid.three");
+  const previewEl = row ? row.querySelector(".form-preview") : null;
+  if (previewEl) {
+    const preview = evaluateTemplatePiece(piece);
+    previewEl.textContent = preview.message;
+    previewEl.classList.toggle("error", !preview.ok);
   }
 }
 
@@ -1235,6 +1428,8 @@ function renderCatalogs() {
   renderBoardsList();
   renderEdgebandsList();
   renderAccessoriesList();
+  refreshCatalogFormState();
+  updateBoardSizesHint();
 }
 
 function renderBoardsList() {
@@ -1246,10 +1441,12 @@ function renderBoardsList() {
     const item = document.createElement("div");
     item.className = "list-item";
     const sizes = board.sizes.map((s) => `${s.width}x${s.height}`).join(", ");
+    const usage = getBoardUsage(board.id);
     item.innerHTML = `
       <div>
         <strong>${board.name}</strong>
         <span class="muted">${board.thickness}mm - ${sizes}</span>
+        <span class="badge">en uso: ${usage}</span>
       </div>
       <div class="actions">
         <button data-action="edit" data-id="${board.id}" class="ghost">Editar</button>
@@ -1265,7 +1462,16 @@ function renderBoardsList() {
     const board = data.catalogs.boards.find((b) => b.id === btn.dataset.id);
     if (!board) return;
     if (btn.dataset.action === "delete") {
-      if (!confirm("Eliminar placa?")) return;
+      const usage = getBoardUsage(board.id);
+      if (
+        !confirm(
+          usage
+            ? `Esta placa esta en uso en ${usage} elemento(s). Eliminarla puede romper plantillas/proyectos. Continuar?`
+            : "Eliminar placa?"
+        )
+      ) {
+        return;
+      }
       data.catalogs.boards = data.catalogs.boards.filter((b) => b.id !== board.id);
       saveData(data);
       renderCatalogs();
@@ -1279,6 +1485,8 @@ function renderBoardsList() {
     el("#board-cost").value = board.cost;
     el("#board-waste").value = board.wastePct;
     el("#board-sizes").value = board.sizes.map((s) => `${s.width}x${s.height}`).join(",");
+    refreshCatalogFormState();
+    updateBoardSizesHint();
   });
 }
 
@@ -1290,10 +1498,12 @@ function renderEdgebandsList() {
   data.catalogs.edgebands.forEach((band) => {
     const item = document.createElement("div");
     item.className = "list-item";
+    const usage = getEdgebandUsage(band.id);
     item.innerHTML = `
       <div>
         <strong>${band.name}</strong>
         <span class="muted">${band.width}mm - ${formatCurrency(band.costPerM)}/m</span>
+        <span class="badge">en uso: ${usage}</span>
       </div>
       <div class="actions">
         <button data-action="edit" data-id="${band.id}" class="ghost">Editar</button>
@@ -1309,7 +1519,16 @@ function renderEdgebandsList() {
     const band = data.catalogs.edgebands.find((b) => b.id === btn.dataset.id);
     if (!band) return;
     if (btn.dataset.action === "delete") {
-      if (!confirm("Eliminar tapacanto?")) return;
+      const usage = getEdgebandUsage(band.id);
+      if (
+        !confirm(
+          usage
+            ? `Este tapacanto esta en uso en ${usage} elemento(s). Eliminarlo puede romper plantillas/proyectos. Continuar?`
+            : "Eliminar tapacanto?"
+        )
+      ) {
+        return;
+      }
       data.catalogs.edgebands = data.catalogs.edgebands.filter((b) => b.id !== band.id);
       saveData(data);
       renderCatalogs();
@@ -1322,6 +1541,7 @@ function renderEdgebandsList() {
     el("#edgeband-width").value = band.width;
     el("#edgeband-cost").value = band.costPerM;
     el("#edgeband-waste").value = band.wastePct;
+    refreshCatalogFormState();
   });
 }
 
@@ -1333,10 +1553,12 @@ function renderAccessoriesList() {
   data.catalogs.accessories.forEach((acc) => {
     const item = document.createElement("div");
     item.className = "list-item";
+    const usage = getAccessoryUsage(acc.id);
     item.innerHTML = `
       <div>
         <strong>${acc.name}</strong>
         <span class="muted">${acc.unit} - ${formatCurrency(acc.cost)}</span>
+        <span class="badge">en uso: ${usage}</span>
       </div>
       <div class="actions">
         <button data-action="edit" data-id="${acc.id}" class="ghost">Editar</button>
@@ -1352,7 +1574,16 @@ function renderAccessoriesList() {
     const acc = data.catalogs.accessories.find((a) => a.id === btn.dataset.id);
     if (!acc) return;
     if (btn.dataset.action === "delete") {
-      if (!confirm("Eliminar accesorio?")) return;
+      const usage = getAccessoryUsage(acc.id);
+      if (
+        !confirm(
+          usage
+            ? `Este accesorio esta en uso en ${usage} elemento(s). Eliminarlo puede romper plantillas/proyectos. Continuar?`
+            : "Eliminar accesorio?"
+        )
+      ) {
+        return;
+      }
       data.catalogs.accessories = data.catalogs.accessories.filter((a) => a.id !== acc.id);
       saveData(data);
       renderCatalogs();
@@ -1364,6 +1595,7 @@ function renderAccessoriesList() {
     el("#acc-name").value = acc.name;
     el("#acc-unit").value = acc.unit;
     el("#acc-cost").value = acc.cost;
+    refreshCatalogFormState();
   });
 }
 
@@ -1412,6 +1644,25 @@ el("#nest-allow-rotate").addEventListener("change", (event) => {
 
 el("#set-labor-mode").addEventListener("change", () => {
   syncLaborFields();
+});
+
+el("#board-sizes").addEventListener("input", () => {
+  updateBoardSizesHint();
+});
+
+el("#btn-cancel-board-edit").addEventListener("click", () => {
+  resetBoardForm();
+  refreshCatalogFormState();
+});
+
+el("#btn-cancel-edgeband-edit").addEventListener("click", () => {
+  resetEdgebandForm();
+  refreshCatalogFormState();
+});
+
+el("#btn-cancel-accessory-edit").addEventListener("click", () => {
+  resetAccessoryForm();
+  refreshCatalogFormState();
 });
 
 el("#btn-new-project").addEventListener("click", () => {
@@ -1612,6 +1863,24 @@ el("#btn-save-template").addEventListener("click", () => {
     showToast("ANCHO, ALTO y PROF deben ser mayores a 0", "error");
     return;
   }
+  for (const piece of templateDraft.pieces) {
+    const validation = evaluateTemplatePiece(piece);
+    if (!validation.ok) {
+      showToast(
+        `Revisa pieza "${piece.name || "Sin nombre"}": ${validation.message}`,
+        "error"
+      );
+      return;
+    }
+    const materialExists = data.catalogs.boards.some((board) => board.id === piece.materialId);
+    if (!materialExists) {
+      showToast(
+        `La pieza "${piece.name || "Sin nombre"}" tiene un material no valido.`,
+        "error"
+      );
+      return;
+    }
+  }
   const index = data.templates.findIndex((t) => t.id === templateDraft.id);
   if (index >= 0) {
     data.templates[index] = structuredClone(templateDraft);
@@ -1639,14 +1908,8 @@ el("#btn-delete-template").addEventListener("click", () => {
 });
 
 el("#btn-add-board").addEventListener("click", () => {
-  const sizes = el("#board-sizes")
-    .value.split(",")
-    .map((entry) => entry.trim())
-    .filter(Boolean)
-    .map((entry) => {
-      const [width, height] = entry.split("x").map((n) => Number(n.trim()));
-      return { width, height };
-    })
+  const sizes = parseBoardSizes(el("#board-sizes").value)
+    .map((entry) => ({ width: entry.width, height: entry.height }))
     .filter((s) => s.width && s.height);
   if (sizes.length === 0) {
     sizes.push({ width: 2750, height: 1830 });
@@ -1677,12 +1940,7 @@ el("#btn-add-board").addEventListener("click", () => {
   } else {
     data.catalogs.boards.push(board);
   }
-  editingBoardId = null;
-  el("#board-name").value = "";
-  el("#board-thickness").value = "";
-  el("#board-cost").value = "";
-  el("#board-waste").value = "";
-  el("#board-sizes").value = "";
+  resetBoardForm();
   saveData(data);
   renderCatalogs();
   renderTemplateEditor();
@@ -1716,11 +1974,7 @@ el("#btn-add-edgeband").addEventListener("click", () => {
   } else {
     data.catalogs.edgebands.push(band);
   }
-  editingEdgebandId = null;
-  el("#edgeband-name").value = "";
-  el("#edgeband-width").value = "";
-  el("#edgeband-cost").value = "";
-  el("#edgeband-waste").value = "";
+  resetEdgebandForm();
   saveData(data);
   renderCatalogs();
   renderTemplateEditor();
@@ -1745,10 +1999,7 @@ el("#btn-add-accessory").addEventListener("click", () => {
   } else {
     data.catalogs.accessories.push(acc);
   }
-  editingAccessoryId = null;
-  el("#acc-name").value = "";
-  el("#acc-unit").value = "";
-  el("#acc-cost").value = "";
+  resetAccessoryForm();
   saveData(data);
   renderCatalogs();
   renderTemplateEditor();

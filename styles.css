@@ -281,6 +281,20 @@ button.primary {
   padding-top: 0.8rem;
 }
 
+.form-preview {
+  margin-top: 0.2rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  background: #f7faf9;
+  color: #385a53;
+  font-size: 0.78rem;
+}
+
+.form-preview.error {
+  background: #fff3f0;
+  color: #7a3127;
+}
+
 .actions {
   margin-top: 0.8rem;
   display: flex;

@@ -49,3 +49,5 @@ Parametros:
 - Validacion de entradas clave (medidas, cantidades, costos, mermas).
 - Reporte de piezas que no entran en la placa para evitar presupuestos incompletos.
 - Normalizacion de datos al importar JSON para compatibilidad hacia atras.
+- Catalogos con modo edicion claro, cancelar edicion y avisos de elementos en uso.
+- Plantillas con preview de formulas para entender rapidamente medidas y cantidades.

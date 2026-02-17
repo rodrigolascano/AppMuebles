@@ -220,6 +220,7 @@
           </div>
           <div class="card">
             <h3>Editor de plantilla</h3>
+            <p class="muted">Formula simple: usa ANCHO, ALTO, PROF, ESPESOR, HOLGURA.</p>
             <label>
               Nombre
               <input id="tpl-name" type="text" />
@@ -234,6 +235,7 @@
 
             <div class="subsection">
               <h4>Piezas</h4>
+              <p class="muted">Las expresiones se previsualizan con los parametros actuales.</p>
               <div id="tpl-pieces"></div>
               <button id="btn-add-tpl-piece" class="ghost">Agregar pieza</button>
             </div>
@@ -261,31 +263,44 @@
             <h3>Placas</h3>
             <div id="boards-list"></div>
             <div class="divider"></div>
+            <p id="board-form-state" class="muted">Nueva placa</p>
             <label>Nombre<input id="board-name" type="text" /></label>
             <label>Espesor (mm)<input id="board-thickness" type="number" /></label>
             <label>Costo por placa<input id="board-cost" type="number" step="0.01" /></label>
             <label>% desperdicio compra<input id="board-waste" type="number" step="0.1" /></label>
             <label>Tamanos (mm) - ej: 2750x1830,2440x1220<input id="board-sizes" type="text" /></label>
-            <button id="btn-add-board" class="primary">Guardar placa</button>
+            <p id="board-sizes-hint" class="muted"></p>
+            <div class="actions">
+              <button id="btn-add-board" class="primary">Guardar placa</button>
+              <button id="btn-cancel-board-edit" class="ghost" type="button">Cancelar edicion</button>
+            </div>
           </div>
           <div class="card">
             <h3>Tapacanto</h3>
             <div id="edgebands-list"></div>
             <div class="divider"></div>
+            <p id="edgeband-form-state" class="muted">Nuevo tapacanto</p>
             <label>Nombre<input id="edgeband-name" type="text" /></label>
             <label>Ancho/Espesor (mm)<input id="edgeband-width" type="number" /></label>
             <label>Costo por metro<input id="edgeband-cost" type="number" step="0.01" /></label>
             <label>% merma<input id="edgeband-waste" type="number" step="0.1" /></label>
-            <button id="btn-add-edgeband" class="primary">Guardar tapacanto</button>
+            <div class="actions">
+              <button id="btn-add-edgeband" class="primary">Guardar tapacanto</button>
+              <button id="btn-cancel-edgeband-edit" class="ghost" type="button">Cancelar edicion</button>
+            </div>
           </div>
           <div class="card">
             <h3>Accesorios</h3>
             <div id="accessories-list"></div>
             <div class="divider"></div>
+            <p id="accessory-form-state" class="muted">Nuevo accesorio</p>
             <label>Nombre<input id="acc-name" type="text" /></label>
             <label>Unidad<input id="acc-unit" type="text" placeholder="u, par, set" /></label>
             <label>Costo unitario<input id="acc-cost" type="number" step="0.01" /></label>
-            <button id="btn-add-accessory" class="primary">Guardar accesorio</button>
+            <div class="actions">
+              <button id="btn-add-accessory" class="primary">Guardar accesorio</button>
+              <button id="btn-cancel-accessory-edit" class="ghost" type="button">Cancelar edicion</button>
+            </div>
           </div>
         </div>
       </section>
