@@ -13,6 +13,9 @@ Web app local para cotizar muebles de melamina, calcular consumos y optimizar co
 - 1 tapacanto.
 - 5 accesorios.
 - 2 plantillas (bajo mesada y alacena).
+- Filtros de proyectos, duplicado rapido y tablero por estados.
+- Alertas de validacion, resumen KPI y notificaciones en pantalla.
+- Perfiles rapidos de configuracion de mano de obra.
 
 ## Estructura
 
@@ -40,3 +43,9 @@ Parametros:
 - Presupuesto: abre una ventana de impresion (PDF desde el navegador).
 - Cut list: descarga CSV.
 - Backup: export/import JSON.
+
+## Mejoras recientes
+
+- Validacion de entradas clave (medidas, cantidades, costos, mermas).
+- Reporte de piezas que no entran en la placa para evitar presupuestos incompletos.
+- Normalizacion de datos al importar JSON para compatibilidad hacia atras.

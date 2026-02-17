@@ -50,6 +50,7 @@ const defaultData = {
   settings: {
     kerf: 3,
     marginPct: 20,
+    allowRotate: true,
     laborMode: "hour",
     laborRatePerHour: 12,
     laborRatePerM2: 4,
@@ -312,18 +313,235 @@ const defaultData = {
   projects: []
 };
 
+function toNumber(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function toPercent(value, fallback = 0) {
+  return Math.max(0, Math.min(100, toNumber(value, fallback)));
+}
+
+function normalizeEdges(edges) {
+  return {
+    l1: Boolean(edges?.l1),
+    l2: Boolean(edges?.l2),
+    w1: Boolean(edges?.w1),
+    w2: Boolean(edges?.w2)
+  };
+}
+
+function normalizeBoard(board, index) {
+  const sizes = Array.isArray(board?.sizes)
+    ? board.sizes
+        .map((size) => ({
+          width: toNumber(size?.width),
+          height: toNumber(size?.height)
+        }))
+        .filter((size) => size.width > 0 && size.height > 0)
+    : [];
+  return {
+    id: board?.id || `board-${index + 1}`,
+    name: board?.name || "Placa",
+    sizes: sizes.length ? sizes : [{ width: 2750, height: 1830 }],
+    thickness: Math.max(0, toNumber(board?.thickness, 18)),
+    cost: Math.max(0, toNumber(board?.cost, 0)),
+    wastePct: toPercent(board?.wastePct, 0)
+  };
+}
+
+function normalizeEdgeband(band, index) {
+  return {
+    id: band?.id || `edge-${index + 1}`,
+    name: band?.name || "Tapacanto",
+    width: Math.max(0, toNumber(band?.width, 0)),
+    costPerM: Math.max(0, toNumber(band?.costPerM, 0)),
+    wastePct: toPercent(band?.wastePct, 0)
+  };
+}
+
+function normalizeAccessory(accessory, index) {
+  return {
+    id: accessory?.id || `acc-${index + 1}`,
+    name: accessory?.name || "Accesorio",
+    unit: accessory?.unit || "u",
+    cost: Math.max(0, toNumber(accessory?.cost, 0))
+  };
+}
+
+function normalizeTemplate(template, index) {
+  const params = {
+    ANCHO: Math.max(1, toNumber(template?.params?.ANCHO, 600)),
+    ALTO: Math.max(1, toNumber(template?.params?.ALTO, 720)),
+    PROF: Math.max(1, toNumber(template?.params?.PROF, 560)),
+    ESPESOR: Math.max(0, toNumber(template?.params?.ESPESOR, 18)),
+    HOLGURA: Math.max(0, toNumber(template?.params?.HOLGURA, 2))
+  };
+  return {
+    id: template?.id || `tpl-${index + 1}`,
+    name: template?.name || `Plantilla ${index + 1}`,
+    visibleParams: Array.isArray(template?.visibleParams)
+      ? template.visibleParams.filter(Boolean)
+      : undefined,
+    params,
+    pieces: Array.isArray(template?.pieces)
+      ? template.pieces.map((piece, pieceIndex) => ({
+          id: piece?.id || `piece-${pieceIndex + 1}`,
+          name: piece?.name || "Pieza",
+          materialId: piece?.materialId || "",
+          exprL: String(piece?.exprL ?? ""),
+          exprW: String(piece?.exprW ?? ""),
+          qtyExpr: String(piece?.qtyExpr ?? "1"),
+          edgeBandId: piece?.edgeBandId || null,
+          edges: normalizeEdges(piece?.edges),
+          notes: piece?.notes || ""
+        }))
+      : [],
+    accessoriesRules: Array.isArray(template?.accessoriesRules)
+      ? template.accessoriesRules.map((rule, ruleIndex) => ({
+          id: rule?.id || `rule-${ruleIndex + 1}`,
+          accessoryId: rule?.accessoryId || "",
+          qtyExpr: String(rule?.qtyExpr ?? "1"),
+          notes: rule?.notes || ""
+        }))
+      : []
+  };
+}
+
+function normalizeProject(project, index) {
+  return {
+    id: project?.id || `proj-${index + 1}`,
+    name: project?.name || "",
+    client: project?.client || "",
+    contact: project?.contact || "",
+    date: project?.date || new Date().toISOString().slice(0, 10),
+    notes: project?.notes || "",
+    status: project?.status || "nuevo",
+    items: Array.isArray(project?.items)
+      ? project.items
+          .map((item, itemIndex) => {
+            if (item?.type === "template") {
+              const params = Object.fromEntries(
+                Object.entries(item?.params || {}).map(([key, value]) => [key, toNumber(value)])
+              );
+              return {
+                id: item?.id || `item-${itemIndex + 1}`,
+                type: "template",
+                templateId: item?.templateId || "",
+                params,
+                qty: Math.max(1, toNumber(item?.qty, 1))
+              };
+            }
+            if (item?.type === "piece") {
+              return {
+                id: item?.id || `item-${itemIndex + 1}`,
+                type: "piece",
+                piece: {
+                  id: item?.piece?.id || `piece-${itemIndex + 1}`,
+                  name: item?.piece?.name || "Pieza",
+                  materialId: item?.piece?.materialId || "",
+                  length: Math.max(0, toNumber(item?.piece?.length, 0)),
+                  width: Math.max(0, toNumber(item?.piece?.width, 0)),
+                  qty: Math.max(1, toNumber(item?.piece?.qty, 1)),
+                  edgeBandId: item?.piece?.edgeBandId || null,
+                  edges: normalizeEdges(item?.piece?.edges),
+                  notes: item?.piece?.notes || "",
+                  thickness: Math.max(0, toNumber(item?.piece?.thickness, 0))
+                }
+              };
+            }
+            return null;
+          })
+          .filter(Boolean)
+      : [],
+    manualAccessories: Array.isArray(project?.manualAccessories)
+      ? project.manualAccessories.map((entry, entryIndex) => ({
+          id: entry?.id || `manacc-${entryIndex + 1}`,
+          accessoryId: entry?.accessoryId || "",
+          qty: Math.max(1, toNumber(entry?.qty, 1)),
+          notes: entry?.notes || ""
+        }))
+      : []
+  };
+}
+
+function normalizeData(rawData) {
+  const input = rawData && typeof rawData === "object" ? rawData : {};
+  const fallback = structuredClone(defaultData);
+
+  const boards = Array.isArray(input.catalogs?.boards)
+    ? input.catalogs.boards.map(normalizeBoard)
+    : fallback.catalogs.boards.map(normalizeBoard);
+  const edgebands = Array.isArray(input.catalogs?.edgebands)
+    ? input.catalogs.edgebands.map(normalizeEdgeband)
+    : fallback.catalogs.edgebands.map(normalizeEdgeband);
+  const accessories = Array.isArray(input.catalogs?.accessories)
+    ? input.catalogs.accessories.map(normalizeAccessory)
+    : fallback.catalogs.accessories.map(normalizeAccessory);
+
+  const templates = Array.isArray(input.templates)
+    ? input.templates.map(normalizeTemplate)
+    : fallback.templates.map(normalizeTemplate);
+  const projects = Array.isArray(input.projects)
+    ? input.projects.map(normalizeProject)
+    : [];
+
+  return {
+    catalogs: {
+      boards: boards.length ? boards : fallback.catalogs.boards.map(normalizeBoard),
+      edgebands: edgebands.length
+        ? edgebands
+        : fallback.catalogs.edgebands.map(normalizeEdgeband),
+      accessories: accessories.length
+        ? accessories
+        : fallback.catalogs.accessories.map(normalizeAccessory)
+    },
+    settings: {
+      kerf: Math.max(0, toNumber(input.settings?.kerf, fallback.settings.kerf)),
+      marginPct: toPercent(input.settings?.marginPct, fallback.settings.marginPct),
+      allowRotate:
+        input.settings?.allowRotate === undefined
+          ? fallback.settings.allowRotate
+          : Boolean(input.settings.allowRotate),
+      laborMode: input.settings?.laborMode === "m2" ? "m2" : "hour",
+      laborRatePerHour: Math.max(
+        0,
+        toNumber(input.settings?.laborRatePerHour, fallback.settings.laborRatePerHour)
+      ),
+      laborRatePerM2: Math.max(
+        0,
+        toNumber(input.settings?.laborRatePerM2, fallback.settings.laborRatePerM2)
+      ),
+      laborTimePerPieceMin: Math.max(
+        0,
+        toNumber(input.settings?.laborTimePerPieceMin, fallback.settings.laborTimePerPieceMin)
+      ),
+      laborTimePerModuleMin: Math.max(
+        0,
+        toNumber(input.settings?.laborTimePerModuleMin, fallback.settings.laborTimePerModuleMin)
+      )
+    },
+    templates,
+    projects
+  };
+}
+
 export function loadData() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) {
-    saveData(defaultData);
-    return structuredClone(defaultData);
+    const normalized = normalizeData(defaultData);
+    saveData(normalized);
+    return normalized;
   }
   try {
-    return JSON.parse(raw);
+    const normalized = normalizeData(JSON.parse(raw));
+    saveData(normalized);
+    return normalized;
   } catch (error) {
     console.error("Storage parse error", error);
-    saveData(defaultData);
-    return structuredClone(defaultData);
+    const normalized = normalizeData(defaultData);
+    saveData(normalized);
+    return normalized;
   }
 }
 
@@ -339,8 +557,9 @@ export function updateData(mutator) {
 }
 
 export function resetData() {
-  saveData(defaultData);
-  return structuredClone(defaultData);
+  const normalized = normalizeData(defaultData);
+  saveData(normalized);
+  return normalized;
 }
 
 export function exportData() {
@@ -350,8 +569,9 @@ export function exportData() {
 
 export function importData(jsonText) {
   const parsed = JSON.parse(jsonText);
-  saveData(parsed);
-  return parsed;
+  const normalized = normalizeData(parsed);
+  saveData(normalized);
+  return normalized;
 }
 
 export function generateId(prefix) {

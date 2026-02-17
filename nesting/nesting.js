@@ -15,6 +15,7 @@ export function nestPieces(pieces, board, kerf = 0, allowRotate = true) {
   );
 
   const boards = [];
+  const unplaced = [];
 
   const createBoard = () => ({
     placements: [],
@@ -54,6 +55,8 @@ export function nestPieces(pieces, board, kerf = 0, allowRotate = true) {
       const newBoard = createBoard();
       if (tryPlaceInBoard(piece, newBoard)) {
         boards.push(newBoard);
+      } else {
+        unplaced.push(piece);
       }
     }
   });
@@ -75,8 +78,28 @@ export function nestPieces(pieces, board, kerf = 0, allowRotate = true) {
   return {
     boards: resultBoards,
     totalBoards: resultBoards.length,
-    boardArea
+    boardArea,
+    unplacedCount: unplaced.length,
+    unplacedPieces: summarizeUnplaced(unplaced)
   };
+}
+
+function summarizeUnplaced(unplaced) {
+  const map = new Map();
+  unplaced.forEach((piece) => {
+    const key = `${piece.id}-${piece.length}-${piece.width}`;
+    if (!map.has(key)) {
+      map.set(key, {
+        id: piece.id,
+        name: piece.name,
+        length: piece.length,
+        width: piece.width,
+        qty: 0
+      });
+    }
+    map.get(key).qty += 1;
+  });
+  return Array.from(map.values());
 }
 
 function tryPlaceInShelf(piece, shelf, board, kerf, allowRotate) {

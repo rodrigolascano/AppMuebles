@@ -9,6 +9,8 @@ import { nestPieces } from "../nesting/nesting.js";
 export function buildProjectSummary(project, data, options = {}) {
   const { boardSizeById = {}, allowRotate = true } = options;
   const { pieces, moduleCount } = computePiecesForProject(project, data);
+  const totalAreaM2 =
+    pieces.reduce((acc, piece) => acc + piece.length * piece.width * piece.qty, 0) / 1e6;
 
   const edgebands = computeEdgebandTotals(pieces, data.catalogs.edgebands);
   const accessories = computeAccessoryTotals(
@@ -28,6 +30,7 @@ export function buildProjectSummary(project, data, options = {}) {
   });
 
   const nesting = [];
+  const unplacedPieces = [];
   let boardsCost = 0;
   piecesByBoard.forEach((boardPieces, boardId) => {
     const board = boardsMap.get(boardId);
@@ -48,7 +51,18 @@ export function buildProjectSummary(project, data, options = {}) {
       purchaseBoards,
       cost
     });
+    if (nestResult.unplacedPieces.length) {
+      nestResult.unplacedPieces.forEach((piece) => {
+        unplacedPieces.push({
+          ...piece,
+          boardId: board.id,
+          boardName: board.name,
+          boardSize: size
+        });
+      });
+    }
   });
+  const unplacedCount = unplacedPieces.reduce((acc, piece) => acc + piece.qty, 0);
 
   const edgebandCost = edgebands.reduce((acc, item) => acc + item.cost, 0);
   const accessoriesCost = accessories.summary.reduce((acc, item) => acc + item.cost, 0);
@@ -61,9 +75,14 @@ export function buildProjectSummary(project, data, options = {}) {
   return {
     pieces,
     moduleCount,
+    totalAreaM2,
     edgebands,
     accessories,
     nesting,
+    unplaced: {
+      count: unplacedCount,
+      pieces: unplacedPieces
+    },
     costs: {
       boards: boardsCost,
       edgebands: edgebandCost,
